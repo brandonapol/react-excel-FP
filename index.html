@@ -40,17 +40,21 @@
             // const data = stateArray[0];
             // const setData = stateArray[1];
 
-            const [sorting, setSorting] = React.useState({
+            const [sorting, setSorting] = React.useState({ // Which column are you sorting by? And are you sorting by ascending or descending?
                 column: null,
                 descending: false,
             });
+            const [edit, setEdit] = React.useState(null);
+            const [search, setSearch] = React.useState(false);
+            const [preSearchData, setPreSearchData] = React.useState(null);
+
 
             function sort(e) {
                 const column = e.target.cellIndex;
-                const descending = sorting.column === column && !sorting.descending;
+                const descending = sorting.column === column && !sorting.descending; // if ascending, switch & checks that the column value is correct
                 const dataCopy = clone(data); // Clone because it's bad to directly modify state
                 // make a copy and return that instead
-                dataCopy.sort((a, b) => {
+                dataCopy.sort((a, b) => { // callback to Array.sort() method
                     if (a[column] === b[column]) {
                         return 0;
                     }
@@ -62,31 +66,96 @@
                             ? 1
                             : -1;
                 });
-                setData(dataCopy);
+                setData(dataCopy); // takes the sorted data and applies it
                 setSorting({column, descending})
+            };
+
+            function showEditor(e) {
+                setEdit({
+                    row: parseInt(e.target.parentNode.dataset.row, 10),
+                    column: e.target.cellIndex,
+                });
             }
 
+            function toggleSearch() {
+                if (search) {
+                    setData(preSearchData);
+                    setSearch(false);
+                    setPreSearchData(null);
+                } else {
+                    setPreSearchData(data);
+                    setSearch(true);
+                }
+            }
+
+            function filter(e) {
+                const needle = e.target.value.toLowerCase();
+                if (!needle) {
+                    setData(preSearchData);
+                    return;
+                }
+                const idx = e.target.dataset.idx;
+                const searchdata = preSearchData.filter((row) => {
+                    return row[idx].toString().toLowerCase().indexOf(needle) > -1;
+                });
+                setData(searchdata);
+            }
+
+            function save(e){
+                e.preventDefault();
+                // if the event does not get explicitly handled, its default action should not be taken as it normally would be
+                const input = e.target.firstChild;
+                const dataCopy = clone(data);
+                dataCopy[edit.row][edit.column] = input.value;
+                setEdit(null);
+                setData(dataCopy);
+            }
+
+            const searchRow = !search ? null : (
+                <tr onChange={filter}>
+                    {headers.map((_, idx) => (
+                    <td key={idx}>
+                        <input type="text" data-idx={idx} />
+                    </td>
+                    ))}
+                </tr>
+                );
 
 
-            return (
+
+            return ( // Keep in mind we could also do all this piece by piece... but mapping automates it and populates!
                 <table>
-                    <thead onClick={sort}>
+                    <thead onClick={sort}> 
                         <tr>
+                            
                             {headers.map((title, idx) => { // curly braces here because of the if statement
-                                if (sorting.column === idx) {
+                                // The sort is on the head instead of here because it will sort according to that column; that's why we need the column
+                                if (sorting.column === idx) { 
                                     title += sorting.descending ? ' \u2191' : ' \u2193';
                                 }
                                 return <th key={idx}>{title}</th>;
                             })}
                         </tr>
                     </thead>
-                    <tbody>
-                        {data.map((row, idx) => ( // No curly braces because the map just returns the whole thing;
+                    <tbody onDoubleClick={showEditor}>
+                        {data.map((row, rowidx) => ( // No curly braces because the map just returns the whole thing;
                             // if we were actually running code in here we'd use curly braces
-                            <tr key={idx}>
-                                {row.map((cell, idx) => (
-                                    <td key={idx}>{cell}</td>
-                                ))}
+                            // data-row is a custom HTML attribute
+                            <tr key={rowidx} data-row={rowidx}> 
+                                {row.map((cell, columnidx) => {
+                                    if (
+                                        edit && 
+                                        edit.row === rowidx && 
+                                        edit.column === columnidx
+                                    ) {
+                                        cell = ( // Parentheses? Curly braces? FAFO! Thanks, JSX!
+                                            <form onSubmit={save}>
+                                                <input type="text" defaultValue={cell} />
+                                            </form> // we need to create a function that allows us to use the edit hook
+                                        )
+                                    }
+                                    return <td key={columnidx}>{cell}</td>;
+                                })}
                             </tr>
                         ))}
                     </tbody>
