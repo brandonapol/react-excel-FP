@@ -113,13 +113,40 @@
 
             const searchRow = !search ? null : (
                 <tr onChange={filter}>
-                    {headers.map((_, idx) => (
+                    {headers.map((_, idx) => ( // the underscore is for a private piece of data, don't worry about it right now
                     <td key={idx}>
                         <input type="text" data-idx={idx} />
                     </td>
                     ))}
                 </tr>
                 );
+
+            // useEffect is used for lifecycle methods
+            // useEffect is used for some kind of work that is not related to rendering - setting up event listeners, fetching data etc
+            // useEffect(callback, optional array of dependencies)
+
+            // React.useEffect(() => {
+            //     console.log(Date.now());
+            // }, [data, headers]) // logs the data only if data or headers are changed
+
+            // React.useEffect(() => {
+            //     console.log(Date.now())
+            // }, []) // logs once after initial render, similar to componentDidMount
+
+            // React.useEffect(() => {
+            //     console.log(Date.now());
+            // }, ) // No dependencies; will re-render each time
+
+            // React.useEffect(() => {
+            //     console.log(Date.now()); // will log after first render
+            //     return () => {
+            //         // log when the component will be removed from DOM like componentWillUnmount using a returned callback
+            //         console.log(Date.now());
+            //     };
+            // }, [])
+
+            
+
 
 
 
